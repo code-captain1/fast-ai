@@ -151,7 +151,7 @@ export const TESTIMONIAL_GLOBE_REVIEWS: GlobeTestimonial[] = [
 
 export default function TestimonialGlobeDemo({ autoplay = true }: { autoplay?: boolean }) {
   return (
-    <div data-globe-demo className="flex min-h-svh w-full items-center justify-center bg-background text-foreground">
+    <section id="about" data-globe-demo className="flex min-h-svh w-full items-center justify-center bg-background text-foreground">
       <TestimonialGlobe
         items={TESTIMONIAL_GLOBE_REVIEWS}
         eyebrow="Trusted on every continent"
@@ -170,6 +170,6 @@ export default function TestimonialGlobeDemo({ autoplay = true }: { autoplay?: b
           </button>
         }
       />
-    </div>
+    </section>
   );
 }

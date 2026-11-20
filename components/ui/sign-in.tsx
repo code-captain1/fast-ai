@@ -1,9 +1,13 @@
 "use client";
 import React, { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 
 // --- HELPER COMPONENTS (ICONS) ---
+
+
+
 
 const GoogleIcon = () => (
   <svg
@@ -84,33 +88,107 @@ const TestimonialCard = ({
 // --- MAIN COMPONENT ---
 
 export const SignInPage: React.FC<SignInPageProps> = ({
-  title = (
-    <span className="font-light text-foreground tracking-tighter">Welcome</span>
-  ),
+  title,
   description = "Access your account and continue your journey with us",
   heroImageSrc,
   testimonials = [],
-  onSignIn,
-  onGoogleSignIn,
-  onResetPassword,
-  onCreateAccount,
 }) => {
+  const router = useRouter();
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const isSignUp = mode === "signup";
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (loading) return;
+
+    const form = new FormData(e.currentTarget);
+    const email = String(form.get("email") ?? "").trim();
+    const password = String(form.get("password") ?? "");
+    const name = String(form.get("name") ?? "").trim();
+    const rememberMe = form.get("rememberMe") === "on";
+
+    setError(null);
+    setLoading(true);
+
+    try {
+      const { error } = isSignUp
+        ? await authClient.signUp.email({
+            name,
+            email,
+            password,
+            callbackURL: "/dashboard",
+          })
+        : await authClient.signIn.email({
+            email,
+            password,
+            rememberMe,
+            callbackURL: "/dashboard",
+          });
+
+      if (error) {
+        setError(error.message ?? "Something went wrong. Please try again.");
+        return;
+      }
+
+      router.push("/dashboard");
+      router.refresh();
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const switchMode = () => {
+    setMode(isSignUp ? "signin" : "signup");
+    setError(null);
+  };
 
   return (
     <div className="h-[100dvh] flex flex-col md:flex-row font-geist w-[100dvw]">
-      {/* Left column: sign-in form */}
       <section className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           <div className="flex flex-col gap-6">
             <h1 className="animate-element animate-delay-100 text-4xl md:text-5xl font-semibold leading-tight">
-              {title}
+              {isSignUp ? (
+                <span className="font-light text-foreground tracking-tighter">
+                  Create account
+                </span>
+              ) : (
+                title ?? (
+                  <span className="font-light text-foreground tracking-tighter">
+                    Welcome
+                  </span>
+                )
+              )}
             </h1>
             <p className="animate-element animate-delay-200 text-muted-foreground">
-              {description}
+              {isSignUp ? "Sign up to start using the assistant" : description}
             </p>
 
-            <form className="space-y-5" onSubmit={onSignIn}>
+            <form className="space-y-5" method="post" onSubmit={handleSubmit}>
+              {isSignUp && (
+                <div className="animate-element animate-delay-300">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Name
+                  </label>
+                  <GlassInputWrapper>
+                    <input
+                      name="name"
+                      type="text"
+                      required
+                      autoComplete="name"
+                      placeholder="Enter your name"
+                      className="w-full bg-transparent text-sm p-4 rounded-2xl focus:outline-none"
+                    />
+                  </GlassInputWrapper>
+                </div>
+              )}
+
               <div className="animate-element animate-delay-300">
                 <label className="text-sm font-medium text-muted-foreground">
                   Email Address
@@ -119,6 +197,8 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                   <input
                     name="email"
                     type="email"
+                    required
+                    autoComplete="email"
                     placeholder="Enter your email address"
                     className="w-full bg-transparent text-sm p-4 rounded-2xl focus:outline-none"
                   />
@@ -134,12 +214,18 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                     <input
                       name="password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password"
+                      required
+                      minLength={8}
+                      autoComplete={isSignUp ? "new-password" : "current-password"}
+                      placeholder={
+                        isSignUp ? "At least 8 characters" : "Enter your password"
+                      }
                       className="w-full bg-transparent text-sm p-4 pr-12 rounded-2xl focus:outline-none"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
                       className="absolute inset-y-0 right-3 flex items-center"
                     >
                       {showPassword ? (
@@ -152,32 +238,33 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                 </GlassInputWrapper>
               </div>
 
-              <div className="animate-element animate-delay-500 flex items-center justify-between text-sm">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="rememberMe"
-                    className="custom-checkbox"
-                  />
-                  <span className="text-foreground/90">Keep me signed in</span>
-                </label>
-                <a
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    onResetPassword?.();
-                  }}
-                  className="hover:underline text-violet-400 transition-colors"
-                >
-                  Reset password
-                </a>
-              </div>
+              {!isSignUp && (
+                <div className="animate-element animate-delay-500 flex items-center text-sm">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="rememberMe"
+                      defaultChecked
+                      className="custom-checkbox"
+                    />
+                    <span className="text-foreground/90">Keep me signed in</span>
+                  </label>
+                </div>
+              )}
+
+              {error && (
+                <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {error}
+                </p>
+              )}
 
               <button
                 type="submit"
-                className="animate-element animate-delay-600 w-full rounded-2xl bg-primary py-4 font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                disabled={loading}
+                className="animate-element animate-delay-600 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Sign In
+                {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                {isSignUp ? "Create account" : "Sign In"}
               </button>
             </form>
 
@@ -189,12 +276,13 @@ export const SignInPage: React.FC<SignInPageProps> = ({
             </div>
 
             <button
-              onClick={() => {
+              type="button"
+              onClick={() =>
                 authClient.signIn.social({
                   provider: "google",
                   callbackURL: "/dashboard",
-                });
-              }}
+                })
+              }
               className="animate-element animate-delay-800 w-full flex items-center justify-center gap-3 border border-border rounded-2xl py-4 hover:bg-secondary transition-colors"
             >
               <GoogleIcon />
@@ -202,23 +290,19 @@ export const SignInPage: React.FC<SignInPageProps> = ({
             </button>
 
             <p className="animate-element animate-delay-900 text-center text-sm text-muted-foreground">
-              New to our platform?{" "}
-              <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  onCreateAccount?.();
-                }}
+              {isSignUp ? "Already have an account? " : "New to our platform? "}
+              <button
+                type="button"
+                onClick={switchMode}
                 className="text-violet-400 hover:underline transition-colors"
               >
-                Create Account
-              </a>
+                {isSignUp ? "Sign in" : "Create Account"}
+              </button>
             </p>
           </div>
         </div>
       </section>
 
-      {/* Right column: hero image + testimonials */}
       {heroImageSrc && (
         <section className="hidden md:block flex-1 relative p-4">
           <div

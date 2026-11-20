@@ -33,17 +33,15 @@ interface ResponsiveHeroBannerProps {
 }
 
 const ResponsiveHeroBanner: React.FC<ResponsiveHeroBannerProps> = ({
-  logoUrl = "/assets/svg/fast-ai-mascot-white-transparent.svg",
+  logoUrl = "/assets/svg/kineticclips-mascot-white-transparent.svg",
   backgroundImageUrl = "https://cdn.21st.dev/assets/mirror/a8/a8cf38f65f7315f95eba8c803c4a80a9d78cb2ea36fbfee49828396e4a0b9737.jpg",
   navLinks = [
     { label: "Home", href: "#", isActive: true },
-    { label: "Missions", href: "#" },
-    { label: "Destinations", href: "#" },
-    { label: "Technology", href: "#" },
-    { label: "Book Flight", href: "#" },
+    { label: "Missions", href: "#mission" },
+    { label: "About", href: "#about" },
   ],
   ctaButtonText = "Reserve Seat",
-  ctaButtonHref = "#",
+  ctaButtonHref = "/sign-in",
   badgeLabel = "New",
   badgeText = "First Commercial Flight to Mars 2026",
   title = "Journey Beyond Earth",
