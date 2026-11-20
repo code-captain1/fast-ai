@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { cn } from "@/lib/utils"; // Assuming you have a `cn` utility from shadcn
 
 // Props interface for the component
@@ -25,6 +25,16 @@ const ActionButton = ({ children }: { children: React.ReactNode }) => (
   </motion.button>
 );
 
+// Animation variants for the text content (typed so "spring" is accepted)
+const FADE_IN_ANIMATION_VARIANTS: Variants = {
+  hidden: { opacity: 0, y: 10 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring", stiffness: 100, damping: 20 },
+  },
+};
+
 // The main hero component
 export const AnimatedMarqueeHero: React.FC<AnimatedMarqueeHeroProps> = ({
   tagline,
@@ -34,16 +44,6 @@ export const AnimatedMarqueeHero: React.FC<AnimatedMarqueeHeroProps> = ({
   images,
   className,
 }) => {
-  // Animation variants for the text content
-  const FADE_IN_ANIMATION_VARIANTS = {
-    hidden: { opacity: 0, y: 10 },
-    show: {
-      opacity: 1,
-      y: 0,
-      transition: { type: "spring", stiffness: 100, damping: 20 },
-    },
-  };
-
   // Duplicate images for a seamless loop
   const duplicatedImages = [...images, ...images];
 
